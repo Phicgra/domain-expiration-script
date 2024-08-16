@@ -1,0 +1,35 @@
+#!/bin/bash
+echo "Testing..."
+
+cd
+
+cd Desktop/domain-scripting
+
+touch domains.txt
+
+# Define domain list file
+DOMAINS_FILE="domains.txt"
+
+# Set notification threshold (days)
+THRESHOLD=30
+
+# Get current date
+CURRENT_DATE=$(date +"%Y-%m-%d")
+
+# Loop through each domain
+while read -r domain; do
+  # Get domain information using whois
+  whois_output=$(whois "$domain")
+
+  # Extract expiration date
+  expiration_date=$(echo "$whois_output" | grep -oP '(?<=Expiry Date: )\d{4}-\d{2}-\d{2}')
+
+  # Calculate days until expiration
+  days_until_expiration=$(( ( $(date -d "$expiration_date" +%s) - $(date -d "$CURRENT_DATE" +%s) ) / 86400 ))
+
+  # Check if expiration is near
+  if [ $days_until_expiration -le $THRESHOLD ]; then
+    # Send notification
+    echo "Domain $domain expires in $days_until_expiration days on $expiration_date" | mail -s "Domain Expiration Alert" emmanueligbeng01@gmail.com
+  fi
+done < "$DOMAINS_FILE"
